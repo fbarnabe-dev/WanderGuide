@@ -5,7 +5,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Slider from '@react-native-community/slider';
 
 const statusBarHeight = StatusBar.currentHeight
-const KEY_GPT = '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';
+const GEMINI_API_KEY = 'AIzaSyAeUT2e9nSnv8KymTBSfexqTmlkCjXhgy0';
 
 export default function App() {
     
@@ -16,56 +16,62 @@ export default function App() {
 
     
 
-    async function handleGenerate(){
-        if(city === ""){
-            Alert.alert("Atenção", "Preencha o nome da cidade!")
+    async function handleGenerate() {
+        if (city === "") {
+            Alert.alert("Atenção", "Preencha o nome da cidade!");
             return;
         }
-
-        setTravel("")
+    
+        setTravel("");
         setLoading(true);
         Keyboard.dismiss();
-
+    
         const prompt = `Crie um roteiro para uma viagem de exatos ${days.toFixed(0)} dias na cidade de ${city}, busque por lugares turisticos, lugares mais visitados, seja preciso nos dias de estadia fornecidos e limite o roteiro apenas na cidade fornecida. Forneça apenas em tópicos com nome do local onde ir em cada dia.`
-
-        fetch("https://api.openai.com/v1/chat/completions", {
+    
+        fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
             method: "POST",
-            headers:{
+            headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${KEY_GPT}`
             },
             body: JSON.stringify({
-                model: "gpt-3.5-turbo",
-                messages: [
+                contents: [
                     {
-                        role: 'user',
-                        content: prompt
+                        parts: [{ text: prompt }]
                     }
-                ],
-                temperature: 0.20,
-                max_tokens: 500,
-                top_p: 1,
+                ]
             })
         })
-
         .then(response => response.json())
-        .then((data) => {
-            console.log(data); // Verifica o conteudo Retornado
+        .then(data => {
+            console.log(data); // Log da resposta
 
-            //console.log(data.choices[0].message.content);
-            //setTravel(data.choices[0].message.content)
+            // Verifique se a resposta contém o conteúdo esperado
+        if (data && data.candidates && data.candidates.length > 0) {
+            const content = data.candidates[0].content;
 
-            // Verificação de segurança para evitar o erro.
-            const responseContent = data.choices?.[0]?.message?.content || "Roteiro não disponível no momento, tente novamente!";
-                setTravel(responseContent);
-        })
-        .catch((error) => {
-            console.log(error);
-        })
-        .finally(() => {
-            setLoading(false);
-        })
-    }
+            // Verifique se 'content.parts' é um array
+        if (Array.isArray(content.parts)) {
+            // Defina o tipo de 'part' explicitamente
+            const fullText = content.parts.map((part: { text: string }) => part.text).join("\n\n");
+            setTravel(fullText);
+            } else {
+                console.error("O formato do conteúdo não é uma string:", content);
+                Alert.alert("Erro", "Formato inesperado do conteúdo retornado pela API.");
+            }
+        } else {
+            console.error("Dados da resposta não estão no formato esperado:", data);
+            Alert.alert("Erro", "Não foi possível gerar o roteiro.");
+        }
+    })
+    .catch(error => {
+        console.log(error);
+        Alert.alert("Erro", "Houve um erro ao acessar a API.");
+    })
+    .finally(() => {
+        setLoading(false);
+    });
+}
+    
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
@@ -76,6 +82,7 @@ export default function App() {
         <View style={styles.form}>
             <Text style={styles.label}>Informe a cidade de destino</Text>
             <TextInput
+                placeholderTextColor={"#000"}
                 placeholder="Ex: Curitiba, PR"
                 style={styles.input}
                 value={city}
@@ -109,14 +116,45 @@ export default function App() {
             {travel && (
                 <View style={styles.content}>
                     <Text style={styles.title}>Roteiro da sua viagem 🧳</Text>
-                    <Text>{travel}</Text>
-                </View>
-            )}
-        </ScrollView>
+                {travel
+                .replace(/#/g, '')  // Remove todos os #
+                .replace(/\*\*/g, '')  // Remove todos os **
+                .split('\n')
+                .map((line, index) => {
 
+        // Negrito para os títulos de "Dia"
+        if (line.toLowerCase().includes("dia")) {
+            return (
+            <Text key={index} style={styles.dayTitle}>
+                {line.trim()}
+            </Text>
+            );
+        }
 
+        // Negrito para os períodos "Manhã", "Tarde", "Noite"
+        if (line.toLowerCase().includes("manhã") || line.toLowerCase().includes("tarde") || line.toLowerCase().includes("noite")) {
+            return (
+            <Text key={index} style={styles.periodTitle}>
+              {line.trim().replace('*', '')} {/* Remove o * */}
+            </Text>
+            );
+        }
+
+        // Adicionar emojis ou bullets para as atividades
+        if (line.trim() !== '') {
+            return (
+            <Text key={index} style={styles.activityText}>
+              👉 {line.trim().replace('*', '')} {/* Remove o * e adiciona emoji */}
+            </Text>
+            );
+        }
+        return null;
+        })}
+    </View>
+)}
+    </ScrollView>
         </View>
-        </GestureHandlerRootView>
+            </GestureHandlerRootView>
     );
 }
 
@@ -183,13 +221,32 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 14
-    },
-    roteiro:{
 
     },
     containerScroll:{
         width: '90%',
         marginTop: 8,
-    }
+    },
+    travelText:{
+        fontSize: 16,
+        lineHeight: 24,
+        marginBottom: 8,
+        color: '#333',
+    },
+    dayTitle: {
+        fontWeight: 'bold',
+        fontSize: 18,
+        marginVertical: 10,
+    },
+        periodTitle: {
+        fontWeight: 'bold',
+        fontSize: 16,
+        marginVertical: 5,
+    },
+        activityText: {
+        fontSize: 14,
+        marginVertical: 2,
+    },
+    
     
 });
