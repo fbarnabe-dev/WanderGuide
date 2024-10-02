@@ -9,7 +9,7 @@ O aplicativo utiliza inteligência artificial para sugerir lugares turísticos e
 
 • Definição do tempo de estadia.
 
-• Geração automática de roteiros personalizados utilizando a API da OpenAI.
+• Geração automática de roteiros personalizados utilizando a API da Gemini do Google.
 
 • Exibição de sugestões detalhadas para cada dia da estadia.
 
