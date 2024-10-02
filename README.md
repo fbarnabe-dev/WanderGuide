@@ -19,7 +19,7 @@ O aplicativo utiliza inteligência artificial para sugerir lugares turísticos e
 
 • Expo: Plataforma de execução para React Native.
 
-• OpenAI API: Inteligência artificial responsável por gerar os roteiros.
+• Gemini API: Inteligência artificial responsável por gerar os roteiros.
 
 • TypeScript: Linguagem usada para garantir tipagem estática e segurança de código.
 
@@ -48,7 +48,7 @@ O aplicativo utiliza inteligência artificial para sugerir lugares turísticos e
    • Crie um arquivo .env na raiz do projeto com o seguinte conteúdo:
 
    ```bash
-   OPENAI_API_KEY=your_openai_api_key
+   GEMINI_API_KEY=your_gemini_api_key
 
 4. **Execute o app no Expo**:
 
@@ -61,6 +61,6 @@ O aplicativo utiliza inteligência artificial para sugerir lugares turísticos e
    
 2. Pressione o botão "Gerar roteiro".
   
-3. O app utilizará a OpenAI API para gerar um roteiro completo baseado nas informações fornecidas.
+3. O app utilizará a Gemini API para gerar um roteiro completo baseado nas informações fornecidas.
 
 
